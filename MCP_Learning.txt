@@ -353,6 +353,22 @@ UART的波特率要一致：用Timer1的溢出来设置波特率，Timer1在8位
 
 
 
+// 1. 设置通道
+Set_ADC_Channel(通道编号);  // 设置 ADD A/B/C 地址线
+
+// 2. 锁地址
+ALE = 1; delay_us(2); ALE = 0;
+
+// 3. 启动转换
+START = 1; delay_us(2); START = 0;
+
+// 4. 等待结束
+while(EOC == 0);
+
+// 5. 读取数据
+OE = 1;
+adc_value = P2;
+OE = 0;
 
 
 
