@@ -438,8 +438,92 @@ void Timer0_ISR() interrupt 1
 
 
 
+---------------------------------------------------------------------------------------
+6 温度控制
+	DS18B20芯片
+
+项目	说明
+通信方式	单总线（1-Wire）
+温度范围	-55℃ ~ +125℃
+精度	±0.5℃（在 -10~+85℃ 范围内）
+分辨率	9~12 位可选（默认 12 位）
+响应速度	最快 750ms（12位精度下）
+唯一地址	每个 DS18B20 内部带唯一 64位地址
+多点测温	可多个传感器并联，仅占一个I/O口
 
 
+
+
+| DS18B20 引脚 | 单片机连接说明                    |
+| ---------- | -------------------------- |
+| GND        | GND                        |
+| DQ         | 任一I/O，如 P3.7 + 上拉电阻（4.7kΩ） |
+| VDD        | VCC（5V）或浮空（寄生电源）           |
+
+
+64 位 ROM 地址结构
+| 字节位置    | 内容            | 说明                       |
+| ------- | ------------- | ------------------------ |
+| \[0]    | Family Code   | 1 字节，固定为 `0x28`（DS18B20） |
+| \[1\~6] | Serial Number | 6 字节，唯一识别码               |
+| \[7]    | CRC 校验码       | 校验前 7 字节是否正确             |
+
+
+ROM 指令
+指令名			十六进制	说明	用途场景
+Read ROM		0x33	读取当前传感器的 64 位唯一地址	单总线下仅连接一个传感器
+Match ROM		0x55	精确匹配某个设备地址	多个设备时精确访问
+Skip ROM		0xCC	跳过识别步骤，默认对全体广播	常用于只连接一个设备
+Search ROM		0xF0	扫描总线上所有设备地址	多设备搜索
+Alarm Search		0xEC	查找温度越限报警的设备	报警场景使用
+功能指令
+Convert T		0x44	启动温度采集（需要等待转换时间）
+Read Scratchpad	0xBE	读取温度寄存器（9 字节数据）
+Write Scratchpad	0x4E	写入警戒温度（TH/TL）与精度配置
+Copy Scratchpad	0x48	将配置数据写入 EEPROM
+Recall E²			0xB8	从 EEPROM 恢复配置
+
+
+1）拉低 DQ → 初始化 ≥ 480μs  主机释放DQ	等待从机响应	从机拉低约 60~240μs
+2）发送 0x55 和 发送地址，或 0xCC（跳过ROM识别）
+3）发送 0x44（启动测温）
+4）等待转换（≥750ms）
+5）重新初始化
+6）发送 0x55 和 发送地址，或 0xCC（跳过ROM识别）
+7）发送 0xBE（读取温度寄存器）
+8）读取低/高字节 → 转换为温度值
+
+
+void DS18B20_Read_Temp_By_ROM(unsigned char rom[8]) {
+    DS18B20_Init();
+    DS18B20_WriteByte(0x55);      // Match ROM
+    for(int i = 0; i < 8; i++)
+        DS18B20_WriteByte(rom[i]);  // 发地址
+
+    DS18B20_WriteByte(0x44);      // Start temperature conversion
+    Delay_ms(750);
+
+    DS18B20_Init();
+    DS18B20_WriteByte(0x55);      // Match again
+    for(int i = 0; i < 8; i++)
+        DS18B20_WriteByte(rom[i]);
+
+    DS18B20_WriteByte(0xBE);      // Read temperature
+
+    low = DS18B20_ReadByte();
+    high = DS18B20_ReadByte();
+    ...
+}
+
+
+
+
+
+
+
+
+
+	1-wire协议
 
 
 
