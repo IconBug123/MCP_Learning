@@ -455,9 +455,9 @@ void Timer0_ISR() interrupt 1
 
 
 | DS18B20 引脚 | 单片机连接说明                    |
-| ---------- | -------------------------- |
+| ----------  | -------------------------- |
 | GND        | GND                        |
-| DQ         | 任一I/O，如 P3.7 + 上拉电阻（4.7kΩ） |
+| DQ          | 任一I/O，如 P3.7 + 上拉电阻（4.7kΩ） |
 | VDD        | VCC（5V）或浮空（寄生电源）           |
 
 
@@ -488,7 +488,7 @@ Recall E²			0xB8	从 EEPROM 恢复配置
 2）发送 0x55 和 发送地址，或 0xCC（跳过ROM识别）
 3）发送 0x44（启动测温）
 4）等待转换（≥750ms）
-5）重新初始化
+5）重新初始化 操作(1)
 6）发送 0x55 和 发送地址，或 0xCC（跳过ROM识别）
 7）发送 0xBE（读取温度寄存器）
 8）读取低/高字节 → 转换为温度值
@@ -516,14 +516,86 @@ void DS18B20_Read_Temp_By_ROM(unsigned char rom[8]) {
 }
 
 
+void Delay_us(unsigned int us) {
+    while(us--) _nop_();  // 实际中根据频率调整
+}
 
+bit DS18B20_Init(void)
+{
+    bit presence;
+    
+    DQ = 1;
+    Delay_us(5);
 
+    DQ = 0;             // 拉低复位
+    Delay_us(480);      // 保持低电平 ≥480us
 
+    DQ = 1;             // 释放 DQ
+    Delay_us(60);       // 等待从机响应
 
+    presence = DQ;      // 若为0表示设备响应
 
+    Delay_us(420);      // 等待总时序恢复
 
+    return !presence;   // 成功返回1
+}
 
-	1-wire协议
+void DS18B20_WriteByte(unsigned char dat)
+{
+    unsigned char i;
+    for(i = 0; i < 8; i++) {
+        DQ = 0;
+        Delay_us(2);
+
+        DQ = dat & 0x01;  // 写最低位
+        Delay_us(60);     // 保持写时序
+
+        DQ = 1;
+        dat >>= 1;
+    }
+}
+
+unsigned char DS18B20_ReadByte(void)
+{
+    unsigned char i, dat = 0;
+    for(i = 0; i < 8; i++) {
+        DQ = 0;
+        Delay_us(2);
+
+        DQ = 1;
+        Delay_us(5);       // 给从机拉低时间
+
+        dat >>= 1;
+        if(DQ) dat |= 0x80;
+
+        Delay_us(60);
+    }
+    return dat;
+}
+
+float DS18B20_ReadTemp()
+{
+    unsigned char temp_L, temp_H;
+    int temp;
+    float real_temp;
+
+    DS18B20_Init();                // 初始化
+    DS18B20_WriteByte(0xCC);      // Skip ROM
+    DS18B20_WriteByte(0x44);      // Convert T
+    Delay_us(75000);              // 转换等待 ≥ 750ms（9位精度）
+
+    DS18B20_Init();
+    DS18B20_WriteByte(0xCC);      // Skip ROM
+    DS18B20_WriteByte(0xBE);      // Read Scratchpad
+
+    temp_L = DS18B20_ReadByte();  // 读取温度低位
+    temp_H = DS18B20_ReadByte();  // 读取温度高位
+
+    temp = (temp_H << 8) | temp_L;
+    real_temp = temp * 0.0625;    // 转换为实际温度（浮点）
+
+    return real_temp;
+}
 
 
 
