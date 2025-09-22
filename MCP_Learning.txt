@@ -804,7 +804,14 @@ sfr P1 = 0x90;        // 定义 P1 口（地址 0x90）(不用 P1 = 0xFE; 这样
 sbit LED = P1^0;      // P1.0 引脚叫 LED
 
 空循环里要有  _non_(); 避免被优化
-volatile 修饰变量表示变量的值随时可能变化, 不要对它优化
+volatile 修饰变量表示变量的值随时可能变化, 不要对它优化 (用于全局变量)
+
+STC89C52里的循环移位语法:
+intrins.h
+_crol_(par_Hex, num); 
+_cror_(par_Hex, num);
+
+
 
 
 
