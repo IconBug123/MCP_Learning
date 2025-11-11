@@ -1,0 +1,8 @@
+DS18B20:
+There are 3 part: 5 Rom of Function Commands, Control Function Commands, Scratchpad(9 bytes)
+It is 1-Wire communication, each chip has unique address (64 bits)
+Search Rom uses 2-branches Tree to find all slave devices one by one.
+
+
+
+ 
