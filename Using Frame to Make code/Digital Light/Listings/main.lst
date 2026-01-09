@@ -1,0 +1,62 @@
+C51 COMPILER V9.60.7.0   MAIN                                                              01/02/2026 18:35:24 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: E:\Keil_V5\C51\BIN\C51.EXE src\main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\
+                    -main.lst) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include "types.h"
+   2          #include "bsp_timer0.h"
+   3          #include "scheduler.h"
+   4          
+   5          #include "svc_display.h"
+   6          #include "svc_countdown.h"
+   7          #include "svc_key.h"
+   8          #include "app_countdown.h"
+   9          
+  10          void main(void)
+  11          {
+  12   1          u32 t_disp = 0;
+  13   1          u32 t_cd   = 0;
+  14   1          u32 t_key  = 0;
+  15   1          u32 t_app  = 0;
+  16   1      
+  17   1          BSP_Timer0_Init_1ms();
+  18   1          Display_Service_Init();
+  19   1          Key_Service_Init();
+  20   1          App_Countdown_Init();
+  21   1      
+  22   1          while(1)
+  23   1          {
+  24   2              u32 now = BSP_GetTickMs();
+  25   2      
+  26   2              if (task_due(now, &t_disp, 1))
+  27   2                  Display_Service_Task();
+  28   2      
+  29   2              if (task_due(now, &t_key, 10))
+  30   2                  Key_Service_Task_10ms();
+  31   2      
+  32   2              if (task_due(now, &t_cd, 10))
+  33   2                  Countdown_Task_10ms();
+  34   2      
+  35   2              if (task_due(now, &t_app, 20))
+  36   2                  App_Countdown_Task();
+  37   2          }
+  38   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    162    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      20
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

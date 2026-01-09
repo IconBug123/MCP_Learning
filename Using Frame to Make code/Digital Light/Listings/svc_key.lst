@@ -1,0 +1,142 @@
+C51 COMPILER V9.60.7.0   SVC_KEY                                                           01/02/2026 18:35:25 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE SVC_KEY
+OBJECT MODULE PLACED IN .\Objects\svc_key.obj
+COMPILER INVOKED BY: E:\Keil_V5\C51\BIN\C51.EXE src\svc_key.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listin
+                    -gs\svc_key.lst) TABS(2) OBJECT(.\Objects\svc_key.obj)
+
+line level    source
+
+   1          // svc_key.c
+   2          #include "svc_key.h"
+   3          #include "drv_key.h"
+   4          
+   5          // 10ms节拍下的参数
+   6          #define DEBOUNCE_TICKS   3    // 30ms 认为稳定
+   7          #define LONGPRESS_TICKS  80   // 800ms 长按（你可改成100=1s）
+   8          
+   9          typedef enum {
+  10              KS_IDLE = 0,
+  11              KS_DEBOUNCE_DOWN,
+  12              KS_DOWN,
+  13              KS_DEBOUNCE_UP
+  14          } KeyState;
+  15          
+  16          static KeyState s_state = KS_IDLE;
+  17          
+  18          static u8  s_db_cnt = 0;
+  19          static u16 s_down_ticks = 0;
+  20          static bool s_long_fired = false;
+  21          
+  22          static volatile KeyEvent s_event = KEY_EVENT_NONE;
+  23          
+  24          void Key_Service_Init(void)
+  25          {
+  26   1          DRV_Key_Init();
+  27   1          s_state = KS_IDLE;
+  28   1          s_db_cnt = 0;
+  29   1          s_down_ticks = 0;
+  30   1          s_long_fired = false;
+  31   1          s_event = KEY_EVENT_NONE;
+  32   1      }
+  33          
+  34          KeyEvent Key_Service_GetEvent(void)
+  35          {
+  36   1          KeyEvent e = s_event;
+  37   1          s_event = KEY_EVENT_NONE;
+  38   1          return e;
+  39   1      }
+  40          
+  41          void Key_Service_Task_10ms(void)
+  42          {
+  43   1          bool pressed = DRV_Key_IsPressed();
+  44   1      
+  45   1          switch (s_state)
+  46   1          {
+  47   2              case KS_IDLE:
+  48   2                  if (pressed)
+  49   2                  {
+  50   3                      s_state = KS_DEBOUNCE_DOWN;
+  51   3                      s_db_cnt = 0;
+  52   3                  }
+  53   2                  break;
+  54   2      
+C51 COMPILER V9.60.7.0   SVC_KEY                                                           01/02/2026 18:35:25 PAGE 2   
+
+  55   2              case KS_DEBOUNCE_DOWN:
+  56   2                  if (pressed)
+  57   2                  {
+  58   3                      s_db_cnt++;
+  59   3                      if (s_db_cnt >= DEBOUNCE_TICKS)
+  60   3                      {
+  61   4                          s_state = KS_DOWN;
+  62   4                          s_down_ticks = 0;
+  63   4                          s_long_fired = false;
+  64   4                      }
+  65   3                  }
+  66   2                  else
+  67   2                  {
+  68   3                      s_state = KS_IDLE; // 抖动回去
+  69   3                  }
+  70   2                  break;
+  71   2      
+  72   2              case KS_DOWN:
+  73   2                  if (pressed)
+  74   2                  {
+  75   3                      if (s_down_ticks < 0xFFFF) s_down_ticks++;
+  76   3      
+  77   3                      // 达到长按阈值：立刻触发一次
+  78   3                      if (!s_long_fired && s_down_ticks >= LONGPRESS_TICKS)
+  79   3                      {
+  80   4                          s_long_fired = true;
+  81   4                          s_event = KEY_EVENT_LONG;
+  82   4                      }
+  83   3                  }
+  84   2                  else
+  85   2                  {
+  86   3                      s_state = KS_DEBOUNCE_UP;
+  87   3                      s_db_cnt = 0;
+  88   3                  }
+  89   2                  break;
+  90   2      
+  91   2              case KS_DEBOUNCE_UP:
+  92   2                  if (!pressed)
+  93   2                  {
+  94   3                      s_db_cnt++;
+  95   3                      if (s_db_cnt >= DEBOUNCE_TICKS)
+  96   3                      {
+  97   4                          // 松开稳定：如果没触发过长按，则算短按
+  98   4                          if (!s_long_fired)
+  99   4                              s_event = KEY_EVENT_SHORT;
+ 100   4      
+ 101   4                          s_state = KS_IDLE;
+ 102   4                      }
+ 103   3                  }
+ 104   2                  else
+ 105   2                  {
+ 106   3                      s_state = KS_DOWN; // 又按回去了
+ 107   3                  }
+ 108   2                  break;
+ 109   2      
+ 110   2              default:
+ 111   2                  s_state = KS_IDLE;
+ 112   2                  break;
+ 113   2          }
+ 114   1      }
+
+
+C51 COMPILER V9.60.7.0   SVC_KEY                                                           01/02/2026 18:35:25 PAGE 3   
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    151    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      5    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

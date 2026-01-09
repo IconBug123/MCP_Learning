@@ -1,0 +1,127 @@
+C51 COMPILER V9.60.7.0   APP_COUNTDOWN                                                     01/02/2026 18:35:24 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE APP_COUNTDOWN
+OBJECT MODULE PLACED IN .\Objects\app_countdown.obj
+COMPILER INVOKED BY: E:\Keil_V5\C51\BIN\C51.EXE src\app_countdown.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\
+                    -Listings\app_countdown.lst) TABS(2) OBJECT(.\Objects\app_countdown.obj)
+
+line level    source
+
+   1          // app_countdown.c
+   2          #include "app_countdown.h"
+   3          #include "svc_countdown.h"
+   4          #include "svc_display.h"
+   5          #include "svc_key.h"
+   6          
+   7          typedef enum {
+   8              APP_IDLE = 0,
+   9              APP_RUN,
+  10              APP_PAUSE,
+  11              APP_DONE
+  12          } AppState;
+  13          
+  14          static AppState s_state = APP_IDLE;
+  15          static u16 s_start_sec = 50;  //倒计时时间
+  16          
+  17          static void app_reset_to_idle(void)
+  18          {
+  19   1          Countdown_Reset(s_start_sec);
+  20   1          Countdown_Stop();
+  21   1          Display_SetNumber(s_start_sec);
+  22   1          s_state = APP_IDLE;
+  23   1      }
+  24          
+  25          void App_Countdown_Init(void)
+  26          {
+  27   1          app_reset_to_idle();
+  28   1      }
+  29          
+  30          void App_Countdown_Task(void)
+  31          {
+  32   1          KeyEvent ev = Key_Service_GetEvent();
+  33   1      
+  34   1          // 长按：全局复位优先级最高
+  35   1          if (ev == KEY_EVENT_LONG)
+  36   1          {
+  37   2              app_reset_to_idle();
+  38   2              return;
+  39   2          }
+  40   1      
+  41   1          switch (s_state)
+  42   1          {
+  43   2              case APP_IDLE:
+  44   2                  // 显示起始值，短按开始
+  45   2                  if (ev == KEY_EVENT_SHORT)
+  46   2                  {
+  47   3                      Countdown_Start();
+  48   3                      s_state = APP_RUN;
+  49   3                  }
+  50   2                  break;
+  51   2      
+  52   2              case APP_RUN:
+  53   2              {
+  54   3                  u16 sec = Countdown_GetRemainSec();
+C51 COMPILER V9.60.7.0   APP_COUNTDOWN                                                     01/02/2026 18:35:24 PAGE 2   
+
+  55   3                  Display_SetNumber(sec);
+  56   3      
+  57   3                  if (Countdown_IsFinished())
+  58   3                  {
+  59   4                      Display_SetNumber(0);
+  60   4                      s_state = APP_DONE;
+  61   4                      break;
+  62   4                  }
+  63   3      
+  64   3                  // 短按暂停
+  65   3                  if (ev == KEY_EVENT_SHORT)
+  66   3                  {
+  67   4                      Countdown_Stop();
+  68   4                      s_state = APP_PAUSE;
+  69   4                  }
+  70   3              }
+  71   2              break;
+  72   2      
+  73   2              case APP_PAUSE:
+  74   2                  // 暂停：保持当前显示
+  75   2                  Display_SetNumber(Countdown_GetRemainSec());
+  76   2      
+  77   2                  // 短按继续
+  78   2                  if (ev == KEY_EVENT_SHORT)
+  79   2                  {
+  80   3                      Countdown_Start();
+  81   3                      s_state = APP_RUN;
+  82   3                  }
+  83   2                  break;
+  84   2      
+  85   2              case APP_DONE:
+  86   2                  // 完成：显示0，短按重新开始
+  87   2                  Display_SetNumber(0);
+  88   2      
+  89   2                  if (ev == KEY_EVENT_SHORT)
+  90   2                  {
+  91   3                      Countdown_Reset(s_start_sec);
+  92   3                      Countdown_Start();
+  93   3                      s_state = APP_RUN;
+  94   3                  }
+  95   2                  break;
+  96   2      
+  97   2              default:
+  98   2                  app_reset_to_idle();
+  99   2                  break;
+ 100   2          }
+ 101   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    139    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      3       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

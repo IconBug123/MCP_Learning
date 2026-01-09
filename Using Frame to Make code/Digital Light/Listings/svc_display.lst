@@ -1,0 +1,86 @@
+C51 COMPILER V9.60.7.0   SVC_DISPLAY                                                       01/02/2026 18:35:25 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE SVC_DISPLAY
+OBJECT MODULE PLACED IN .\Objects\svc_display.obj
+COMPILER INVOKED BY: E:\Keil_V5\C51\BIN\C51.EXE src\svc_display.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Li
+                    -stings\svc_display.lst) TABS(2) OBJECT(.\Objects\svc_display.obj)
+
+line level    source
+
+   1          // svc_display.c
+   2          #include "svc_display.h"
+   3          #include "drv_7seg.h"
+   4          
+   5          // 段码表（共阴，a b c d e f g dp）
+   6          // 0~9 + 空白
+   7          static const u8 SEG_TAB[11] = {
+   8              0x3F, //0
+   9              0x06, //1
+  10              0x5B, //2
+  11              0x4F, //3
+  12              0x66, //4
+  13              0x6D, //5
+  14              0x7D, //6
+  15              0x07, //7
+  16              0x7F, //8
+  17              0x6F, //9
+  18              0x00  //blank
+  19          };
+  20          
+  21          static volatile u8 g_buf[4] = {0,0,0,0};
+  22          static u8 g_scan_idx = 0;
+  23          
+  24          void Display_Service_Init(void)
+  25          {
+  26   1          DRV_7Seg_Init();
+  27   1          Display_SetNumber(0);
+  28   1      }
+  29          
+  30          // void Display_SetRaw(const u8 seg4[4])
+  31          // {
+  32          //     u8 i;
+  33          //     for(i=0;i<4;i++) g_buf[i] = seg4[i];
+  34          // }
+  35          
+  36          void Display_SetNumber(u16 num)
+  37          {
+  38   1          u8 d0, d1, d2, d3;
+  39   1      
+  40   1          if (num > 9999) num = 9999;
+  41   1      
+  42   1          d0 = (u8)(num / 1000);
+  43   1          d1 = (u8)((num / 100) % 10);
+  44   1          d2 = (u8)((num / 10) % 10);
+  45   1          d3 = (u8)(num % 10);
+  46   1      
+  47   1          // 前导零处理：比如 12 显示 "  12"
+  48   1          g_buf[0] = (d0==0) ? SEG_TAB[10] : SEG_TAB[d0];
+  49   1          g_buf[1] = (d0==0 && d1==0) ? SEG_TAB[10] : SEG_TAB[d1];
+  50   1          g_buf[2] = (d0==0 && d1==0 && d2==0) ? SEG_TAB[10] : SEG_TAB[d2];
+  51   1          g_buf[3] = SEG_TAB[d3];
+  52   1      }
+  53          
+  54          void Display_Service_Task(void)
+C51 COMPILER V9.60.7.0   SVC_DISPLAY                                                       01/02/2026 18:35:25 PAGE 2   
+
+  55          {
+  56   1          // 每次刷一位：scan_idx 0~3
+  57   1          DRV_7Seg_Output(g_scan_idx, g_buf[g_scan_idx]);
+  58   1          g_scan_idx++;
+  59   1          if (g_scan_idx >= 4) g_scan_idx = 0;
+  60   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    188    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     16       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

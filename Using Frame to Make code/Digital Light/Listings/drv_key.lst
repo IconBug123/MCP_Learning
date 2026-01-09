@@ -1,0 +1,41 @@
+C51 COMPILER V9.60.7.0   DRV_KEY                                                           01/02/2026 18:35:25 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE DRV_KEY
+OBJECT MODULE PLACED IN .\Objects\drv_key.obj
+COMPILER INVOKED BY: E:\Keil_V5\C51\BIN\C51.EXE src\drv_key.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listin
+                    -gs\drv_key.lst) TABS(2) OBJECT(.\Objects\drv_key.obj)
+
+line level    source
+
+   1          // drv_key.c
+   2          #include <REG52.H>
+   3          #include "drv_key.h"
+   4          
+   5          // ====== 你按硬件改这里 ======
+   6          sbit KEY1 = P3^0;     // P3.2
+   7          // 假设：按下=0，松开=1
+   8          
+   9          void DRV_Key_Init(void)
+  10          {
+  11   1          KEY1 = 1;         // 准双向口，上拉（8051常见写法）
+  12   1      }
+  13          
+  14          bool DRV_Key_IsPressed(void)
+  15          {
+  16   1          return (KEY1 == 0) ? true : false;
+  17   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     10    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

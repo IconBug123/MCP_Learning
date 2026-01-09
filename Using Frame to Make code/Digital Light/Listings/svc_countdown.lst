@@ -1,0 +1,99 @@
+C51 COMPILER V9.60.7.0   SVC_COUNTDOWN                                                     01/02/2026 18:35:25 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE SVC_COUNTDOWN
+OBJECT MODULE PLACED IN .\Objects\svc_countdown.obj
+COMPILER INVOKED BY: E:\Keil_V5\C51\BIN\C51.EXE src\svc_countdown.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\
+                    -Listings\svc_countdown.lst) TABS(2) OBJECT(.\Objects\svc_countdown.obj)
+
+line level    source
+
+   1          // svc_countdown.c
+   2          #include "svc_countdown.h"
+   3          
+   4          static volatile u16 g_start_sec = 10;
+   5          static volatile u16 g_remain_sec = 10;
+   6          static volatile bool g_running = false;
+   7          static volatile bool g_finished = false;
+   8          
+   9          static u16 g_acc_10ms = 0;
+  10          
+  11          void Countdown_Init(u16 start_sec)
+  12          {
+  13   1          Countdown_Reset(start_sec);
+  14   1          Countdown_Stop();
+  15   1      }
+  16          
+  17          void Countdown_Reset(u16 start_sec)
+  18          {
+  19   1          g_start_sec = start_sec;
+  20   1          g_remain_sec = start_sec;
+  21   1          g_finished = false;
+  22   1          g_acc_10ms = 0;
+  23   1      }
+  24          
+  25          void Countdown_Start(void)
+  26          {
+  27   1          if (g_remain_sec == 0)
+  28   1              g_remain_sec = g_start_sec;
+  29   1      
+  30   1          g_running = true;
+  31   1          g_finished = false;
+  32   1      }
+  33          
+  34          void Countdown_Stop(void)
+  35          {
+  36   1          g_running = false;
+  37   1      }
+  38          
+  39          u16 Countdown_GetRemainSec(void)
+  40          {
+  41   1          return g_remain_sec;
+  42   1      }
+  43          
+  44          bool Countdown_IsRunning(void)
+  45          {
+  46   1          return g_running;
+  47   1      }
+  48          
+  49          bool Countdown_IsFinished(void)
+  50          {
+  51   1          return g_finished;
+  52   1      }
+  53          
+  54          // 10ms调用一次：累积到1000ms -> 秒--
+C51 COMPILER V9.60.7.0   SVC_COUNTDOWN                                                     01/02/2026 18:35:25 PAGE 2   
+
+  55          void Countdown_Task_10ms(void)
+  56          {
+  57   1          if (!g_running || g_finished) return;
+  58   1      
+  59   1          g_acc_10ms += 10;
+  60   1          if (g_acc_10ms >= 1000)
+  61   1          {
+  62   2              g_acc_10ms = 0;
+  63   2              if (g_remain_sec > 0)
+  64   2              {
+  65   3                  g_remain_sec--;
+  66   3                  if (g_remain_sec == 0)
+  67   3                  {
+  68   4                      g_finished = true;
+  69   4                      g_running = false;
+  70   4                  }
+  71   3              }
+  72   2          }
+  73   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    116    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      6    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      2    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

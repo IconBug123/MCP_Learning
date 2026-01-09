@@ -1,0 +1,11 @@
+".\Objects\app_countdown.obj",
+".\Objects\bsp_timer0.obj",
+".\Objects\drv_7seg.obj",
+".\Objects\main.obj",
+".\Objects\scheduler.obj",
+".\Objects\svc_countdown.obj",
+".\Objects\svc_display.obj",
+".\Objects\drv_key.obj",
+".\Objects\svc_key.obj" 
+TO ".\Objects\digit_light" 
+PRINT(".\Listings\digit_light.m51") RAMSIZE(256) 
